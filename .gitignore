@@ -1,0 +1,29 @@
+Remove-Item gitignore -ErrorAction SilentlyContinue
+@'
+# Dataset and raw captures (each member downloads their own copy)
+data/
+*.csv
+*.pcap
+*.pcapng
+
+# Proposal and other documents (kept local, not shared in the repo)
+text/
+
+# Large or regenerable model files (re-create with awid3_baseline.py)
+artifacts/*.joblib
+artifacts/*.pt
+artifacts/*.npz
+
+# Python / environment
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+'@ | Set-Content -Encoding ascii .gitignore
+
+!artifacts/*.csv

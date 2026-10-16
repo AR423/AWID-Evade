@@ -1,0 +1,15 @@
+{
+ "data": [
+  "data/Evil_Twin_40.csv"
+ ],
+ "out": "artifacts",
+ "label_col": null,
+ "max_rows_per_file": 50000,
+ "max_files": null,
+ "split": "blocks",
+ "epochs": 30,
+ "batch": 1024,
+ "lr": 0.001,
+ "patience": 5,
+ "rf_trees": 200
+}
