@@ -1,10 +1,4 @@
 """Shared helpers for reading and cleaning AWID3-CSV files.
-
-Notes from the AWID3-CSV README:
-  * features span the MAC layer and the application layer
-  * multi-valued cells had their commas replaced by "-"; empty cells are "-"
-  * some TLS rows are only partially decrypted -> drop them (see drop_bad_tls_rows)
-  * each source CSV was split into 50,000-row pieces, so you can load a handful of pieces
 """
 import glob
 import os
@@ -91,3 +85,13 @@ def binary_target(series):
         return (series.astype(float) != 0).astype(int)
     txt = series.astype(str).str.strip().str.lower()
     return (~txt.isin(BENIGN_WORDS)).astype(int)
+
+
+def piece_label_counts(path):
+    """Read only the label column of one piece and return {label: rows}. Used to find which
+    pieces actually contain attack rows (some pieces are all Normal)."""
+    head = pd.read_csv(path, nrows=0, encoding_errors="replace")
+    lc = find_label_col(head)
+    s = pd.read_csv(path, usecols=[lc], low_memory=False, on_bad_lines="skip",
+                    encoding_errors="replace")[lc].astype(str).str.strip()
+    return s.value_counts().to_dict()

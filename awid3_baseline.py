@@ -10,6 +10,7 @@ HOW TO USE
      Examples:
         python awid3_baseline.py --data data/ --out artifacts/                  # everything in data/
         python awid3_baseline.py --data data/ --split random                    # optimistic split
+        python awid3_baseline.py --data data/ --per-group 12 --min-attack-rows 500   # 12 pieces per attack, only ones with attacks
         python awid3_baseline.py --data "data/Deauth_*.csv" "data/Evil_Twin_*.csv" --max-files 20
 
 WHAT IT DOES
@@ -40,7 +41,7 @@ from sklearn.model_selection import GroupShuffleSplit, train_test_split
 from sklearn.preprocessing import StandardScaler
 
 from awid3_common import (binary_target, drop_bad_tls_rows, expand_paths,
-                          find_label_col, read_awid3, to_numeric_series)
+                          find_label_col, piece_label_counts, read_awid3, to_numeric_series)
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=pd.errors.PerformanceWarning)
@@ -72,45 +73,84 @@ SEED = 42
 # ------------------------------------------------------------------------------
 
 
-def load_data(paths, max_rows, max_files, label_col):
-    files = expand_paths(paths)
+def reduce_frame(df, label_col):
+    """Shrink one 254-column piece to its numeric, non-identifier columns right after reading it.
+    Without this, loading hundreds of pieces would keep ~250 text columns each in memory."""
+    drop_re = re.compile(DROP_REGEX, re.I)
+    keep = {}
+    for c in df.columns:
+        if c == label_col or drop_re.search(c):
+            continue
+        s = df[c]
+        if s.notna().sum() == 0:
+            continue                      # empty in this piece; absent columns become NaN on concat
+        t = to_numeric_series(s)
+        if t.notna().sum() / s.notna().sum() < MIN_NUMERIC_SHARE:
+            continue
+        keep[c] = t.astype("float32")
+    out = pd.DataFrame(keep, index=df.index)
+    out["_label"] = df[label_col].astype(str).str.strip().values
+    return out
+
+
+def has_attack_rows(f, min_rows):
+    counts = piece_label_counts(f)
+    attack = sum(v for k, v in counts.items() if binary_target(pd.Series([k])).iloc[0] == 1)
+    return attack >= min_rows
+
+
+def pick_files(files, max_files, per_group, min_attack_rows=0):
+    """per_group = K: take K evenly spaced pieces from each attack group (Deauth_*, Evil_Twin_*, ...),
+    so a small sample still covers the whole capture and every attack type."""
+    if min_attack_rows:
+        n0 = len(files)
+        files = [f for f in files if has_attack_rows(f, min_attack_rows)]
+        print(f"  pieces with >= {min_attack_rows} attack rows: {len(files)} of {n0}")
+    if per_group:
+        groups = {}
+        for f in files:
+            key = re.sub(r"[_\-\s]*\d+$", "", os.path.splitext(os.path.basename(f))[0])
+            groups.setdefault(key, []).append(f)
+        files = []
+        for key, fs in sorted(groups.items()):
+            fs = sorted(fs, key=lambda x: [int(t) if t.isdigit() else t for t in re.split(r"(\d+)", x)])
+            idx = np.unique(np.linspace(0, len(fs) - 1, min(per_group, len(fs))).round().astype(int))
+            files += [fs[i] for i in idx]
+            print(f"  group {key!r}: {len(fs)} pieces, using {len(idx)}")
     if max_files:
         files = files[:max_files]
+    return files
+
+
+def load_data(paths, max_rows, max_files, label_col, per_group=None, min_attack_rows=0):
+    files = pick_files(expand_paths(paths), max_files, per_group, min_attack_rows)
     frames = []
     for f in files:
-        df = read_awid3(f, nrows=max_rows)
-        df = df.assign(_source_file=os.path.basename(f), _row=np.arange(len(df)))
+        raw = read_awid3(f, nrows=max_rows)
+        lc = label_col or find_label_col(raw)
+        raw = drop_bad_tls_rows(raw)
+        df = reduce_frame(raw, lc)
+        df["_source_file"] = os.path.basename(f)
+        df["_row"] = np.arange(len(df), dtype="int32")
         frames.append(df)
-        print(f"  loaded {os.path.basename(f)}: {len(df):,} rows")
+        n_att = int((binary_target(df["_label"]) == 1).sum())
+        print(f"  loaded {os.path.basename(f)}: {len(df):,} rows, {n_att:,} attack")
+        del raw
     df = pd.concat(frames, ignore_index=True, sort=False)
-    label_col = label_col or find_label_col(df)
-    print(f"Label column: {label_col!r}")
-    print(df[label_col].value_counts(dropna=False).head(20).to_string())
-    return df, label_col
+    print("Labels:\n" + df["_label"].value_counts(dropna=False).head(20).to_string())
+    return df, "_label"
 
 
 def build_features(df, label_col):
-    df = drop_bad_tls_rows(df).reset_index(drop=True)
+    df = df.reset_index(drop=True)
     y = binary_target(df[label_col]).to_numpy()
     attack_type = np.where(y == 1, df[label_col].astype(str).str.strip(), "Normal")
     groups = (df["_source_file"].astype(str) + "#" + (df["_row"] // BLOCK_SIZE).astype(str)).to_numpy()
     X = df.drop(columns=[label_col, "_source_file", "_row"], errors="ignore")
-    drop_re = re.compile(DROP_REGEX, re.I)
-    keep, num = [], {}
-    for c in X.columns:
-        if drop_re.search(c):
-            continue
-        s = X[c]
-        if s.isna().mean() > MAX_MISSING or s.notna().sum() < MIN_NONNULL:
-            continue
-        t = to_numeric_series(s)
-        if t.notna().sum() / s.notna().sum() < MIN_NUMERIC_SHARE:
-            continue
-        if t.nunique(dropna=True) <= 1:
-            continue
-        num[c] = t
-        keep.append(c)
-    Xn = pd.DataFrame(num)[keep].replace([np.inf, -np.inf], np.nan)
+    keep = [c for c in X.columns
+            if X[c].isna().mean() <= MAX_MISSING and X[c].notna().sum() >= MIN_NONNULL
+            and X[c].nunique(dropna=True) > 1]
+    Xn = X[keep].replace([np.inf, -np.inf], np.nan)
     print(f"Features kept: {len(keep)} of {X.shape[1]}  |  rows: {len(Xn):,}  "
           f"|  attack share: {y.mean():.3f}")
     return Xn, y, attack_type, groups
@@ -220,6 +260,10 @@ def main():
     ap.add_argument("--label-col", default=LABEL_COL)
     ap.add_argument("--max-rows-per-file", type=int, default=MAX_ROWS_PER_FILE)
     ap.add_argument("--max-files", type=int, default=MAX_FILES)
+    ap.add_argument("--min-attack-rows", type=int, default=0,
+                    help="only use pieces with at least this many attack rows (e.g. 500)")
+    ap.add_argument("--per-group", type=int, default=None,
+                    help="use K evenly spaced pieces from each attack group (e.g. 12)")
     ap.add_argument("--split", choices=["blocks", "random"], default="blocks")
     ap.add_argument("--epochs", type=int, default=30)
     ap.add_argument("--batch", type=int, default=1024)
@@ -232,7 +276,7 @@ def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Device: {device}")
 
-    df, label_col = load_data(a.data, a.max_rows_per_file, a.max_files, a.label_col)
+    df, label_col = load_data(a.data, a.max_rows_per_file, a.max_files, a.label_col, a.per_group, a.min_attack_rows)
     X, y, attack_type, groups = build_features(df, label_col)
     if len(np.unique(y)) < 2:
         raise SystemExit("Only one class present. Load both normal and attack files.")
