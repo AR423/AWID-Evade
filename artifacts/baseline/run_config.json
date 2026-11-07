@@ -1,11 +1,13 @@
 {
  "data": [
-  "data/Evil_Twin_40.csv"
+  "data/"
  ],
- "out": "artifacts",
+ "out": "artifacts\\run_all2",
  "label_col": null,
  "max_rows_per_file": 50000,
  "max_files": null,
+ "min_attack_rows": 1,
+ "per_group": null,
  "split": "blocks",
  "epochs": 30,
  "batch": 1024,

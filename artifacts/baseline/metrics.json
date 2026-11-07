@@ -1,0 +1,73 @@
+{
+ "split": "blocks",
+ "n_features": 48,
+ "n_train": 2068937,
+ "n_val": 442497,
+ "n_test": 443722,
+ "random_forest": {
+  "accuracy": 0.9997859019836745,
+  "precision": 0.9979267116682738,
+  "recall": 0.9974938551255482,
+  "f1": 0.9977102364482152,
+  "confusion_matrix": [
+   [
+    422930,
+    43
+   ],
+   [
+    52,
+    20697
+   ]
+  ],
+  "per_attack": {
+   "Deauth": {
+    "n": 6204,
+    "detected": 6204,
+    "recall": 1.0
+   },
+   "Evil_Twin": {
+    "n": 14545,
+    "detected": 14493,
+    "recall": 0.9964248882777587
+   },
+   "Normal": {
+    "n": 422973,
+    "false_alarms": 43,
+    "false_alarm_rate": 0.00010166133535710317
+   }
+  }
+ },
+ "mlp": {
+  "accuracy": 0.9989227489283831,
+  "precision": 0.9777966341394428,
+  "recall": 0.9996626343438239,
+  "f1": 0.9886087412420762,
+  "confusion_matrix": [
+   [
+    422502,
+    471
+   ],
+   [
+    7,
+    20742
+   ]
+  ],
+  "per_attack": {
+   "Deauth": {
+    "n": 6204,
+    "detected": 6204,
+    "recall": 1.0
+   },
+   "Evil_Twin": {
+    "n": 14545,
+    "detected": 14538,
+    "recall": 0.9995187349604675
+   },
+   "Normal": {
+    "n": 422973,
+    "false_alarms": 471,
+    "false_alarm_rate": 0.001113546254725479
+   }
+  }
+ }
+}

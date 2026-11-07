@@ -12,7 +12,7 @@ import re
 
 import pandas as pd
 
-from awid3_common import binary_target, expand_paths, piece_label_counts
+from awid3_common import expand_paths, is_attack_label, piece_label_counts
 
 
 def main():
@@ -25,18 +25,20 @@ def main():
     for i, f in enumerate(files, 1):
         counts = piece_label_counts(f)
         total = sum(counts.values())
-        attack = sum(v for k, v in counts.items()
-                     if binary_target(pd.Series([k])).iloc[0] == 1)
+        attack = sum(v for k, v in counts.items() if is_attack_label(k))
+        blank = sum(v for k, v in counts.items() if not is_attack_label(k) and
+                    str(k).strip().lower() not in ("normal", "benign", "0", "legitimate", "legit"))
         grp = re.sub(r"[_\\-\\s]*\\d+$", "", os.path.splitext(os.path.basename(f))[0])
         rows.append(dict(file=os.path.basename(f), group=grp, rows=total, attack_rows=attack,
-                         normal_rows=total - attack, path=f))
+                         normal_rows=total - attack - blank, unlabeled_rows=blank, path=f))
         print(f"[{i}/{len(files)}] {os.path.basename(f)}: {attack:,} attack / {total:,}")
     df = pd.DataFrame(rows)
     df.to_csv(a.out, index=False)
     print("\nPer group:")
     g = df.groupby("group").agg(pieces=("file", "count"), rows=("rows", "sum"),
                                 attack_rows=("attack_rows", "sum"),
-                                pieces_with_attack=("attack_rows", lambda s: int((s > 0).sum())))
+                                pieces_with_attack=("attack_rows", lambda s: int((s > 0).sum())),
+                                unlabeled_rows=("unlabeled_rows", "sum"))
     print(g.to_string())
     print(f"\nWritten to {a.out}")
 

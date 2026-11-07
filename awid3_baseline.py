@@ -40,8 +40,9 @@ from sklearn.metrics import (accuracy_score, confusion_matrix, f1_score,
 from sklearn.model_selection import GroupShuffleSplit, train_test_split
 from sklearn.preprocessing import StandardScaler
 
-from awid3_common import (binary_target, drop_bad_tls_rows, expand_paths,
-                          find_label_col, piece_label_counts, read_awid3, to_numeric_series)
+from awid3_common import (MISSING_WORDS, binary_target, drop_bad_tls_rows, expand_paths,
+                          find_label_col, is_attack_label, piece_label_counts, read_awid3,
+                          read_label_raw, to_numeric_series)
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=pd.errors.PerformanceWarning)
@@ -95,7 +96,7 @@ def reduce_frame(df, label_col):
 
 def has_attack_rows(f, min_rows):
     counts = piece_label_counts(f)
-    attack = sum(v for k, v in counts.items() if binary_target(pd.Series([k])).iloc[0] == 1)
+    attack = sum(v for k, v in counts.items() if is_attack_label(k))
     return attack >= min_rows
 
 
@@ -128,12 +129,22 @@ def load_data(paths, max_rows, max_files, label_col, per_group=None, min_attack_
     for f in files:
         raw = read_awid3(f, nrows=max_rows)
         lc = label_col or find_label_col(raw)
+        # take the label from a raw text read so blanks / 'NA' / '-' are never silently NaN
+        lab = read_label_raw(f, lc, nrows=max_rows)
+        if len(lab) == len(raw):
+            raw[lc] = lab.values
         raw = drop_bad_tls_rows(raw)
         df = reduce_frame(raw, lc)
+        unl = df["_label"].map(lambda v: str(v).strip().lower() in MISSING_WORDS)
+        if unl.any():
+            shown = df.loc[unl, "_label"].value_counts().head(3).to_dict()
+            print(f"  WARNING {os.path.basename(f)}: dropping {int(unl.sum()):,} rows with a "
+                  f"missing label {shown}")
+            df = df[~unl].reset_index(drop=True)
         df["_source_file"] = os.path.basename(f)
         df["_row"] = np.arange(len(df), dtype="int32")
         frames.append(df)
-        n_att = int((binary_target(df["_label"]) == 1).sum())
+        n_att = int(df["_label"].map(is_attack_label).sum())
         print(f"  loaded {os.path.basename(f)}: {len(df):,} rows, {n_att:,} attack")
         del raw
     df = pd.concat(frames, ignore_index=True, sort=False)
@@ -144,7 +155,7 @@ def load_data(paths, max_rows, max_files, label_col, per_group=None, min_attack_
 def build_features(df, label_col):
     df = df.reset_index(drop=True)
     y = binary_target(df[label_col]).to_numpy()
-    attack_type = np.where(y == 1, df[label_col].astype(str).str.strip(), "Normal")
+    attack_type = np.where(y == 1, df[label_col].astype(str).str.strip(), "Normal").astype(str)
     groups = (df["_source_file"].astype(str) + "#" + (df["_row"] // BLOCK_SIZE).astype(str)).to_numpy()
     X = df.drop(columns=[label_col, "_source_file", "_row"], errors="ignore")
     keep = [c for c in X.columns

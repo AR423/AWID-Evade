@@ -1,4 +1,10 @@
 """Shared helpers for reading and cleaning AWID3-CSV files.
+
+Notes from the AWID3-CSV README:
+  * features span the MAC layer and the application layer
+  * multi-valued cells had their commas replaced by "-"; empty cells are "-"
+  * some TLS rows are only partially decrypted -> drop them (see drop_bad_tls_rows)
+  * each source CSV was split into 50,000-row pieces, so you can load a handful of pieces
 """
 import glob
 import os
@@ -9,6 +15,7 @@ import pandas as pd
 
 LABEL_CANDIDATES = ["label", "class", "attack", "target", "category"]
 BENIGN_WORDS = {"normal", "benign", "0", "legitimate", "legit"}
+MISSING_WORDS = {"", "<blank>", "-", "nan", "na", "none", "null"}
 
 
 def expand_paths(paths):
@@ -87,11 +94,25 @@ def binary_target(series):
     return (~txt.isin(BENIGN_WORDS)).astype(int)
 
 
+def read_label_raw(path, label_col, nrows=None):
+    """Read ONLY the label column as plain text, with no NaN conversion, so tokens such as
+    'NA', 'None', '-' or an empty cell stay visible instead of silently becoming NaN."""
+    s = pd.read_csv(path, usecols=[label_col], dtype=str, keep_default_na=False,
+                    na_filter=False, nrows=nrows, on_bad_lines="skip",
+                    encoding_errors="replace")[label_col].astype(str).str.strip()
+    return s.replace("", "<blank>")
+
+
 def piece_label_counts(path):
     """Read only the label column of one piece and return {label: rows}. Used to find which
-    pieces actually contain attack rows (some pieces are all Normal)."""
+    pieces actually contain attack rows (some pieces are all Normal). Blank labels show up
+    as '<blank>' and count as neither Normal nor attack."""
     head = pd.read_csv(path, nrows=0, encoding_errors="replace")
     lc = find_label_col(head)
-    s = pd.read_csv(path, usecols=[lc], low_memory=False, on_bad_lines="skip",
-                    encoding_errors="replace")[lc].astype(str).str.strip()
-    return s.value_counts().to_dict()
+    return read_label_raw(path, lc).value_counts().to_dict()
+
+
+def is_attack_label(value):
+    """True for a real attack label; False for Normal and for blank/missing tokens."""
+    v = str(value).strip().lower()
+    return v not in BENIGN_WORDS and v not in MISSING_WORDS

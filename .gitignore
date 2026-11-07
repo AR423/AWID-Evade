@@ -1,18 +1,8 @@
-Remove-Item gitignore -ErrorAction SilentlyContinue
-@'
 # Dataset and raw captures (each member downloads their own copy)
 data/
 *.csv
 *.pcap
 *.pcapng
-
-# Proposal and other documents (kept local, not shared in the repo)
-text/
-
-# Large or regenerable model files (re-create with awid3_baseline.py)
-artifacts/*.joblib
-artifacts/*.pt
-artifacts/*.npz
 
 # Python / environment
 .venv/
@@ -24,6 +14,20 @@ __pycache__/
 .DS_Store
 Thumbs.db
 .vscode/
-'@ | Set-Content -Encoding ascii .gitignore
 
-!artifacts/*.csv
+# Proposal and other documents (kept local, not shared in the repo)
+text/
+
+# --- artifacts/: track only small, human-readable result files ---
+# Ignore everything in artifacts/ by default (model binaries, scratch/debug runs, etc.)
+artifacts/*
+
+# Keep the piece-scan summary (small, useful for the report)
+!artifacts/piece_labels.csv
+
+# Keep only the canonical baseline run folder; any other run_*/debug folder stays ignored
+!artifacts/baseline/
+artifacts/baseline/*
+!artifacts/baseline/*.json
+!artifacts/baseline/*.csv
+venv/
