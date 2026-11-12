@@ -1,0 +1,41 @@
+{
+ "radiotap.dbm_antsignal": {
+  "kind": "continuous",
+  "raw_bound": 5.0
+ },
+ "wlan_radio.signal_dbm": {
+  "kind": "continuous",
+  "raw_bound": 5.0
+ },
+ "radiotap.datarate": {
+  "kind": "continuous",
+  "raw_bound": 6.0
+ },
+ "wlan_radio.data_rate": {
+  "kind": "continuous",
+  "raw_bound": 6.0
+ },
+ "frame.time_delta": {
+  "kind": "continuous",
+  "relative_bound": 1.0,
+  "note": "post-perturbation value clipped to [0.0x, 2.0x] of the original raw value"
+ },
+ "wlan_radio.duration": {
+  "kind": "continuous",
+  "relative_bound": 1.0,
+  "note": "post-perturbation value clipped to [0.0x, 2.0x] of the original raw value"
+ },
+ "wlan.duration": {
+  "kind": "continuous",
+  "relative_bound": 1.0,
+  "note": "post-perturbation value clipped to [0.0x, 2.0x] of the original raw value"
+ },
+ "wlan.fc.retry": {
+  "kind": "binary",
+  "note": "flips toward 0/1 after step"
+ },
+ "wlan.fixed.reason_code": {
+  "kind": "discrete",
+  "raw_bound": 3.0
+ }
+}

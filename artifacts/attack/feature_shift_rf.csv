@@ -1,0 +1,10 @@
+feature,mean_abs_shift,rows_perturbed
+wlan.duration,21.05484962463379,20749
+wlan_radio.duration,19.516557693481445,20749
+wlan_radio.data_rate,1.4202758073806763,20749
+wlan_radio.signal_dbm,1.183249831199646,20749
+radiotap.dbm_antsignal,1.171128749847412,20749
+radiotap.datarate,1.158420205116272,6811
+wlan.fixed.reason_code,0.3432162404060364,6206
+wlan.fc.retry,0.17489999532699585,20749
+frame.time_delta,5.807011984870769e-05,20749

@@ -6,6 +6,7 @@ data/
 
 # Python / environment
 .venv/
+venv/
 __pycache__/
 *.pyc
 .ipynb_checkpoints/
@@ -30,4 +31,13 @@ artifacts/*
 artifacts/baseline/*
 !artifacts/baseline/*.json
 !artifacts/baseline/*.csv
-venv/
+
+# --- artifacts/attack/ and artifacts/defense/: same pattern as baseline/ ---
+!artifacts/attack/
+artifacts/attack/*
+!artifacts/attack/*.json
+!artifacts/attack/*.csv
+
+!artifacts/defense/
+artifacts/defense/*
+!artifacts/defense/*.json

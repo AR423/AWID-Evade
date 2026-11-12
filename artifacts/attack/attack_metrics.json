@@ -1,0 +1,112 @@
+{
+ "n_attack_samples": 20749,
+ "features_perturbed": [
+  "radiotap.dbm_antsignal",
+  "wlan_radio.signal_dbm",
+  "radiotap.datarate",
+  "wlan_radio.data_rate",
+  "frame.time_delta",
+  "wlan_radio.duration",
+  "wlan.duration",
+  "wlan.fc.retry",
+  "wlan.fixed.reason_code"
+ ],
+ "before": {
+  "random_forest": {
+   "accuracy": 0.9974938551255482,
+   "recall": 0.9974938551255482,
+   "per_attack": {
+    "Deauth": {
+     "n": 6204,
+     "recall": 1.0
+    },
+    "Evil_Twin": {
+     "n": 14545,
+     "recall": 0.9964248882777587
+    }
+   }
+  },
+  "mlp": {
+   "accuracy": 0.9996626343438239,
+   "recall": 0.9996626343438239,
+   "per_attack": {
+    "Deauth": {
+     "n": 6204,
+     "recall": 1.0
+    },
+    "Evil_Twin": {
+     "n": 14545,
+     "recall": 0.9995187349604675
+    }
+   }
+  }
+ },
+ "fgsm": {
+  "random_forest": {
+   "accuracy": 0.934551062701817,
+   "recall": 0.934551062701817,
+   "per_attack": {
+    "Deauth": {
+     "n": 6204,
+     "recall": 0.8858800773694391
+    },
+    "Evil_Twin": {
+     "n": 14545,
+     "recall": 0.9553111034719834
+    }
+   }
+  },
+  "mlp": {
+   "accuracy": 0.9504554436358379,
+   "recall": 0.9504554436358379,
+   "per_attack": {
+    "Deauth": {
+     "n": 6204,
+     "recall": 0.8866860090264346
+    },
+    "Evil_Twin": {
+     "n": 14545,
+     "recall": 0.9776555517359917
+    }
+   }
+  },
+  "evasion_rate": {
+   "random_forest": 0.06544893729818302,
+   "mlp": 0.04954455636416211
+  }
+ },
+ "pgd": {
+  "random_forest": {
+   "accuracy": 0.9337317461082462,
+   "recall": 0.9337317461082462,
+   "per_attack": {
+    "Deauth": {
+     "n": 6204,
+     "recall": 0.8858800773694391
+    },
+    "Evil_Twin": {
+     "n": 14545,
+     "recall": 0.9541423169474046
+    }
+   }
+  },
+  "mlp": {
+   "accuracy": 0.9506964191045352,
+   "recall": 0.9506964191045352,
+   "per_attack": {
+    "Deauth": {
+     "n": 6204,
+     "recall": 0.8870083816892328
+    },
+    "Evil_Twin": {
+     "n": 14545,
+     "recall": 0.9778618081815057
+    }
+   }
+  },
+  "evasion_rate": {
+   "random_forest": 0.06626825389175384,
+   "mlp": 0.04930358089546483
+  }
+ }
+}
