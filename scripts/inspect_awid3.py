@@ -2,8 +2,8 @@
 """
 Quick look at an AWID3-CSV file (use ONE small split file, ~50,000 rows).
 
-    python inspect_awid3.py path/to/one_file.csv
-    python inspect_awid3.py path/to/one_file.csv --nrows 20000 --out columns_report.csv
+    python scripts/inspect_awid3.py path/to/one_file.csv
+    python scripts/inspect_awid3.py path/to/one_file.csv --nrows 20000 --out columns_report.csv
 
 Prints: shape, label-column guess and its values, column types, missing-value share,
 and how many columns could be used as numeric features. Run this first, then check the

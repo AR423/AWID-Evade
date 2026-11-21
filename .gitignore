@@ -41,3 +41,11 @@ artifacts/attack/*
 !artifacts/defense/
 artifacts/defense/*
 !artifacts/defense/*.json
+
+# --- artifacts/problem_space/: the two recaptured pcaps are deliberate exceptions
+# (small, real hardware-run evidence) to the blanket *.pcap rule above, plus the
+# metrics writeup, same pattern as baseline/attack/defense ---
+!artifacts/problem_space/
+artifacts/problem_space/*
+!artifacts/problem_space/*.json
+!artifacts/problem_space/*.pcap

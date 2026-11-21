@@ -2,7 +2,7 @@
 """
 List every CSV piece with its label counts, so you can see which pieces contain attack rows.
 
-    python scan_pieces.py data/ --out piece_labels.csv
+    python scripts/scan_pieces.py data/ --out piece_labels.csv
 
 Reads only the Label column of each piece (fast, low memory). Prints a summary per attack group.
 """

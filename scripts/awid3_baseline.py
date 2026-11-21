@@ -6,12 +6,12 @@ Tested on real AWID3-CSV pieces (Deauth_22.csv, Evil_Twin_40.csv): all pieces sh
 
 HOW TO USE
   1. Put the downloaded 50,000-row CSV pieces in one folder, e.g. data/  (Deauth_*.csv, Evil_Twin_*.csv)
-  2. python awid3_baseline.py --data data/ --out artifacts/
+  2. python scripts/awid3_baseline.py --data data/ --out artifacts/
      Examples:
-        python awid3_baseline.py --data data/ --out artifacts/                  # everything in data/
-        python awid3_baseline.py --data data/ --split random                    # optimistic split
-        python awid3_baseline.py --data data/ --per-group 12 --min-attack-rows 500   # 12 pieces per attack, only ones with attacks
-        python awid3_baseline.py --data "data/Deauth_*.csv" "data/Evil_Twin_*.csv" --max-files 20
+        python scripts/awid3_baseline.py --data data/ --out artifacts/                  # everything in data/
+        python scripts/awid3_baseline.py --data data/ --split random                    # optimistic split
+        python scripts/awid3_baseline.py --data data/ --per-group 12 --min-attack-rows 500   # 12 pieces per attack, only ones with attacks
+        python scripts/awid3_baseline.py --data "data/Deauth_*.csv" "data/Evil_Twin_*.csv" --max-files 20
 
 WHAT IT DOES
   load pieces -> binary label (Normal=0, any attack=1) -> drop leaky/identifier columns ->

@@ -1,0 +1,31 @@
+{
+  "attack_type": "Deauth",
+  "hardware": "Alfa AWUS036ACM in monitor mode, Kali Linux VM",
+  "features_perturbed": [
+    "wlan.duration / wlan_radio.duration",
+    "wlan.fixed.reason_code",
+    "wlan.fc.retry",
+    "frame.time_delta"
+  ],
+  "features_not_perturbable_in_problem_space": [
+    "radiotap.dbm_antsignal",
+    "wlan_radio.signal_dbm",
+    "radiotap.datarate",
+    "wlan_radio.data_rate"
+  ],
+  "clean": {
+    "frames_sent": 50,
+    "frames_recaptured": 50,
+    "random_forest_recall": 0.0,
+    "mlp_recall": 1.0
+  },
+  "perturbed": {
+    "frames_sent": 50,
+    "frames_recaptured": 51,
+    "random_forest_recall": 0.0,
+    "mlp_recall": 0.98
+  },
+  "finding": "MLP recall (1.00 -> 0.98) confirms the feature-space evasion result transfers to a real, physically injected and recaptured Deauth frame -- a believable, modest drop consistent with the feature-space result's order of magnitude. Random Forest showed 0.00 recall on BOTH the clean and perturbed capture, which is not a genuine evasion result: it is a hardware-constrained artifact of self-sniffing the injected frames on the same radio used to transmit them. A self-transmitted frame has no real over-the-air RSSI measurement, so radiotap.dbm_antsignal/wlan_radio.signal_dbm come back NaN for every injected frame and get filled with the training sentinel value -- an extreme outlier on RF's #1 and #3 most important features (wlan.fc.protected 13.2%, radiotap.dbm_antsignal 11.0%, wlan_radio.signal_dbm 11.0% of total importance). RF's hard, axis-aligned decision splits collapse completely on this out-of-distribution input regardless of perturbation; MLP's smoother decision boundary is comparatively robust to it.",
+  "limitation": "A second, independent radio is needed to get a genuine RSSI reading on the injected frames (mirroring how AWID3 itself was collected -- an observer measuring someone else's real transmission, not self-sniffing). Investigated and ruled out for this project: the lab's DD-WRT router has no packet-capture tool available over Telnet/SSH; a teammate's laptop Wi-Fi adapter reported 'Network monitor mode: Not supported' via Windows' netsh wlan show wirelesscapabilities. A rooted, nexmon-patched Android phone remains a theoretical option but was not pursued given the time remaining in the course project.",
+  "conclusion": "Problem-space replay was only conclusive for the MLP given available hardware. The RF result is reported as a documented methodological limitation, not as a model vulnerability."
+}

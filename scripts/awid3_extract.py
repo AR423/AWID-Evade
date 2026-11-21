@@ -11,17 +11,20 @@ feature table directly from our own recaptured pcap with no custom parser.
 
 Run this on the SAME machine/environment where awid3_baseline.py's output
 lives (scaler.joblib, rf.joblib, mlp.pt, features.json, sentinel.json), with
-tshark installed and this repo's awid3_common.py / awid3_baseline.py importable.
+tshark installed. Run it from the repo root so its sibling imports
+(awid3_common.py / awid3_baseline.py, both in this same scripts/ folder)
+resolve, and so the --artifacts/default paths below point at artifacts/.
 
 Usage (both clean and perturbed Deauth frames are ground-truth attacks, so
 pass --label 1 for both -- the "recall" printed is how many of them the model
 still catches; --label 0 would report a false-alarm rate instead):
 
-    python3 awid3_extract.py --pcap clean.pcap     --label 1 --artifacts artifacts/run_all2
-    python3 awid3_extract.py --pcap perturbed.pcap --label 1 --artifacts artifacts/run_all2
+    python3 scripts/awid3_extract.py --pcap artifacts/problem_space/clean.pcap     --label 1 --artifacts artifacts/baseline
+    python3 scripts/awid3_extract.py --pcap artifacts/problem_space/perturbed.pcap --label 1 --artifacts artifacts/baseline
 """
 import argparse
 import json
+import os
 import subprocess
 import sys
 from io import StringIO
@@ -31,7 +34,7 @@ import numpy as np
 import pandas as pd
 import torch
 
-sys.path.insert(0, ".")
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from awid3_common import to_numeric_series
 from awid3_baseline import MLP
 
@@ -49,7 +52,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--pcap", required=True)
     ap.add_argument("--label", type=int, choices=[0, 1], required=True)
-    ap.add_argument("--artifacts", default="artifacts/run_all2",
+    ap.add_argument("--artifacts", default="artifacts/baseline",
                      help="folder holding features.json/sentinel.json/scaler.joblib/rf.joblib/mlp.pt")
     a = ap.parse_args()
 

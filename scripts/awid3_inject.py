@@ -24,17 +24,15 @@ way the feature-space attack sets them. This narrows the problem-space attack
 to 4 of the 9 attacker-controllable features -- the scope-narrowing already
 flagged as a risk in Progress Report 2.
 
-MUST run as root, on Linux, with the interface already in monitor mode:
+MUST run as root, on Linux, with the interface already in monitor mode.
+Run it from the repo root so the --budget default below resolves:
 
     sudo airmon-ng check kill
     sudo airmon-ng start wlan0          # creates wlan0mon
-    sudo python3 awid3_inject.py --iface wlan0mon --bssid <AP MAC> \\
-        --client ff:ff:ff:ff:ff:ff --mode clean     --out clean.pcap
-    sudo python3 awid3_inject.py --iface wlan0mon --bssid <AP MAC> \\
-        --client ff:ff:ff:ff:ff:ff --mode perturbed --out perturbed.pcap
-
-Run this from the repo root (or point --budget at perturbation_budget.json)
-so it picks up the exact same budget file awid3_attack.py used.
+    sudo python3 scripts/awid3_inject.py --iface wlan0mon --bssid <AP MAC> \\
+        --client ff:ff:ff:ff:ff:ff --mode clean     --out artifacts/problem_space/clean.pcap
+    sudo python3 scripts/awid3_inject.py --iface wlan0mon --bssid <AP MAC> \\
+        --client ff:ff:ff:ff:ff:ff --mode perturbed --out artifacts/problem_space/perturbed.pcap
 """
 import argparse
 import json
